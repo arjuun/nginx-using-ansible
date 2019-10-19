@@ -1,60 +1,47 @@
-# nginx-using-ansible
-running an nginx with virtual host using ansible
+## nginx-using-ansible
 
-> running nginx using ansible in Ubuntu
+#### *This repo has a playbook used for running nginx in ubuntu versions using the below modules*
 
-*This repo has a playbook used for running nginx in ubuntu versions*
+*Modules used for this playbook are*
 
-```
----
-- name : "nginx installation in Ubuntu"
-  hosts: all
-  become: true
-  
-## enter your domain name to create configuration file, root directory with the domain name
-  vars_prompt:
-    - name: domain
-      prompt: "Enter domain name"
-      private: no
-  
-  tasks:
-## nginx installation
-    - name: "Installing nginx"
-      apt:
+* __*yum*__ 
+    * used to download nginx using yum packet manager
+    ```
+    - yum:
         name: nginx
         state: present
-        update_cache: yes
-        
-## removing default virtual host to avoid duplicating  "port 80" with the virtual host of our domain
-    - name: "Remove default site"
-      file:
-        path: /etc/nginx/site-enabled/default
-        state: absent
-
-## creating a root directory with the domain name
-    - name: "Create root directory"
-      file:
-        path: "/var/www/{{ domain }}"
-        state: directory
-        mode: '0755'
-
-## creating an index.html file to test and give appropriate permissions
-    - name: "Content in index.html"
-      copy:
-        content: <h1> test file </h1>
+    ```
+    
+* __*copy*__
+    * create an index.html from the local and copies to a location on the remote machine with appropriate permission to file
+    
+    ```
+    - copy:
+        content: <h1> it works </h1>
         dest: "/var/www/{{ domain }}/index.html"
         owner: www-data
         group: www-data
-
-## creating virtual host configuration file with the domain name
-    - name: "Virtual hosts"
-      template:
+    ```
+    * create conf directory for nginx on the remote machine and giving appropriate permissions
+    ```
+    - file:
+        path: "/var/www/{{ domain }}"
+        state: directory
+        mode: '0755'
+    ```
+    
+* __*template*__
+    * used to create a virtual host file by using variable {{ domain }} and copy to conf file of nginx
+    ```
+    - template:
         src: devopsarju.ml.conf.tml
         dest: "/etc/nginx/conf.d/{{ domain }}.conf"
-
-## restaring nginx
-    - name: "restart"
-      service:
-        name: nginx
-        state: reloaded
-```
+    ```
+    
+* __*file*__
+    * used to delete defaullt_site by specifying its path to avoid duplicating port 80 conflict while running with current domain
+    ```
+    - file:
+        path: /etc/nginx/site-enabled/default
+        state: absent
+    ```
