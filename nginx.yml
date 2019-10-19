@@ -1,0 +1,47 @@
+---
+- name : "nginx installation in Ubuntu"
+  hosts: all
+  become: true
+  vars_prompt:
+    - name: domain
+      prompt: "Enter domain name"
+      private: no
+  tasks:
+
+    - name: "Installing nginx"
+      apt:
+        name: nginx
+        state: present
+        update_cache: yes
+        
+## removing default site to avoid duplicating port 80 with the new domain.conf
+    - name: "Remove default site"
+      file:
+        path: /etc/nginx/site-enabled/default
+        state: absent
+
+## creating a document root with the given domain name 
+    - name: "Create root directory"
+      file:
+        path: "/var/www/{{ domain }}"
+        state: directory
+        mode: '0755'
+
+## creating a sample html page to test with appropriate permissions
+    - name: "Content"
+      copy:
+        content: <h1> it works </h1>
+        dest: "/var/www/{{ domain }}/index.html"
+        owner: www-data
+        group: www-data
+
+## creating virtual hosts with the given domain name
+    - name: "Virtual hosts"
+      template:
+        src: devopsarju.ml.conf.tmpl
+        dest: "/etc/nginx/conf.d/{{ domain }}.conf"
+
+    - name: "restart"
+      service:
+        name: nginx
+        state: reloaded
